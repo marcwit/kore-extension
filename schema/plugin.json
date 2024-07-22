@@ -1,7 +1,47 @@
 {
   "jupyter.lab.shortcuts": [],
-  "title": "kore_extension",
-  "description": "kore_extension settings.",
+  "title": "kore-extension",
+  "description": "kore-extension settings.",
+
+  "jupyter.lab.menus": {
+    "main": [
+      {
+        "id": "kore-main-menu",
+        "label": "Kore",
+        "rank": 80,
+        "items": [
+          {
+            "command": "kore:send-grades"
+          },
+          {
+            "type": "separator"
+          },
+          {
+            "command": "kore:import-course"
+          },
+          {
+            "command": "kore:import-assignment"
+          },
+          {
+            "command": "kore:import-problem"
+          },
+          {
+            "type": "separator"
+          },
+          {
+            "command": "kore:backup-course"
+          },
+          {
+            "command": "kore:reset-course"
+          },
+          {
+            "command": "kore:delete-course"
+          }
+        ]
+      }
+    ]
+  },
+
   "type": "object",
   "properties": {},
   "additionalProperties": false

@@ -132,3 +132,7 @@ See [RELEASE](RELEASE.md)
 ## Code
 
 On the following line the extension shall be explained and files where changes are made are listed.
+
+In `kore_extension/handlers.py` the routes are defined.
+In `schema/plugin.json` the layout of the extension is defined.
+In `src/index.ts` the behaviour is defined.
