@@ -1,0 +1,8 @@
+{
+  "jupyter.lab.shortcuts": [],
+  "title": "kore_extension",
+  "description": "kore_extension settings.",
+  "type": "object",
+  "properties": {},
+  "additionalProperties": false
+}
