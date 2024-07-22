@@ -5,11 +5,11 @@ author_email: marcus.wittig@fh-zwickau.de
 author_name: Marcus Wittig
 has_binder: false
 has_settings: true
-kind: frontend
+kind: server
 labextension_name: kore_extension
 project_short_description: A JupyterLab extension to expand the eponymous service
     for course management and grade handling between LMS and JupyterHub via LTI 1.3.
 python_name: kore_extension
-repository: 'https://github.fh-zwickau.de/marckre/KoreExtension'
+repository: https://github.fh-zwickau.de/marckre/KoreExtension
 test: true
 
