@@ -87,6 +87,7 @@ folder is located. Then you can remove the symlink named `kore_extension` within
 
 ### Package the extension
 
+Run `jlpm run build`.
 Use `python -m build` or `python -m build -s` to generate a pacakge under `dist/`.
 
 #### Server tests
@@ -125,10 +126,6 @@ More precisely, the JupyterLab helper [Galata](https://github.com/jupyterlab/jup
 
 More information are provided within the [ui-tests](./ui-tests/README.md) README.
 
-### Packaging the extension
-
-See [RELEASE](RELEASE.md)
-
 ## Code
 
 On the following line the extension shall be explained and files where changes are made are listed.
@@ -136,3 +133,11 @@ On the following line the extension shall be explained and files where changes a
 In `kore_extension/handlers.py` the routes are defined.
 In `schema/plugin.json` the layout of the extension is defined.
 In `src/index.ts` the behaviour is defined.
+
+For testing generate package with `jlpm install`, `jlpm run build` and `python -m build`.
+Copy package to server and install it in the podman container under the `jhub` environment.
+
+```terminal
+source /opt/conda/etc/profile.d/conda.sh; conda activate jhub
+pip install kore_extension-0.1.0-py3-none-any.whl
+```

@@ -1,7 +1,7 @@
 {
-  "name": "kore_extension-ui-tests",
+  "name": "kore-extension-ui-tests",
   "version": "1.0.0",
-  "description": "JupyterLab kore_extension Integration Tests",
+  "description": "JupyterLab kore-extension Integration Tests",
   "private": true,
   "scripts": {
     "start": "jupyter lab --config jupyter_server_test_config.py",

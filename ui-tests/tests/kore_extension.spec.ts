@@ -16,6 +16,6 @@ test('should emit an activation console message', async ({ page }) => {
   await page.goto();
 
   expect(
-    logs.filter(s => s === 'JupyterLab extension kore_extension is activated!')
+    logs.filter(s => s === 'JupyterLab extension kore-extension is activated!')
   ).toHaveLength(1);
 });

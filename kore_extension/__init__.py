@@ -13,7 +13,7 @@ from .handlers import setup_handlers
 def _jupyter_labextension_paths():
     return [{
         "src": "labextension",
-        "dest": "kore_extension"
+        "dest": "kore-extension"
     }]
 
 

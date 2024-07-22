@@ -1,5 +1,5 @@
 {
-    "name": "kore_extension",
+    "name": "kore-extension",
     "version": "0.1.0",
     "description": "A JupyterLab extension to expand the eponymous service for course management and grade handling between LMS and JupyterHub via LTI 1.3.",
     "keywords": [
@@ -7,9 +7,9 @@
         "jupyterlab",
         "jupyterlab-extension"
     ],
-    "homepage": "https://github.fh-zwickau.de/marckre/KoreExtension",
+    "homepage": "",
     "bugs": {
-        "url": "https://github.fh-zwickau.de/marckre/KoreExtension/issues"
+        "url": "/issues"
     },
     "license": "BSD-3-Clause",
     "author": {
@@ -27,7 +27,7 @@
     "style": "style/index.css",
     "repository": {
         "type": "git",
-        "url": "https://github.fh-zwickau.de/marckre/KoreExtension.git"
+        "url": ".git"
     },
     "scripts": {
         "build": "jlpm build:lib && jlpm build:labextension:dev",
