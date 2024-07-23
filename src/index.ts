@@ -202,12 +202,23 @@ const plugin: JupyterFrontEndPlugin<void> = {
             label: 'Send all grades to LMS',
             caption: 'Used to transfer all grades of current course to LMS.',
             execute: async (args: any) => {
-                Notification.promise(
-                    sendGrades(), {
-                    pending: { message: 'Sending grades to LMS...', options: { autoClose: false } },
-                    success: { message: (result: any) => 'Sending grades successful.' },
-                    error: { message: (reason: any) => `Sending grades failed with ${reason}` }
+                // Double check with user to send grades.
+                const result = await showDialog({
+                    title: 'Confirm Send Grades',
+                    body: 'Are you sure you want to send all grades to LMS?',
+                    buttons: [Dialog.cancelButton(), Dialog.okButton({ label: 'Send' })]
                 });
+
+                if (result.button.accept) {
+                    Notification.promise(
+                        sendGrades(), {
+                        pending: { message: 'Sending grades to LMS...', options: { autoClose: false } },
+                        success: { message: (result: any) => 'Sending grades successful.' },
+                        error: { message: (reason: any) => `Sending grades failed with ${reason}` }
+                    });
+                } else {
+                    console.log('User cancelled the operation.');
+                }
             }
         });
 
