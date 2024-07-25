@@ -137,6 +137,28 @@ const plugin: JupyterFrontEndPlugin<void> = {
                             console.error(`Error while trying to copy ${context}.`);
                         }
                     }
+
+                    // Deleting a course.
+                    else if (operation == 'delete') {
+                        try {
+                            // Access list of available courses. Therefore alter operation to get/import, both are valid.
+                            let requestData = await executeOperation('get', context);
+
+                            // Populate dropdown menu with results.
+                            const result = await InputDialog.getItem({
+                                title: `Select ${context} to delete:`,
+                                items: requestData.names,
+                                okLabel: 'Delete',
+                            });
+
+                            // Execute deletion if the delete button was accepted (clicked).
+                            if (result.button.accept) {
+                                console.log(`Deleting ${context}: ${result.value}`);
+                            }
+                        } catch (reason) {
+                            console.error(`Error while trying to delete ${context}.`);
+                        }
+                    }
                     else {
                         showDialog({
                             title: `${operation} ${context}`,
