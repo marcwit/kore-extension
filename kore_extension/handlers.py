@@ -45,8 +45,15 @@ class KoreExtensionGradeHandler(APIHandler):
 
 class KoreExtensionCourseHandler(APIHandler):
     @tornado.web.authenticated
-    def get(self):
-        url = f'{kore_url}/courses'
+    def get(self, subroute=None):
+        base_url = f'{kore_url}/courses'
+
+        if subroute == "active":
+            url = f'{base_url}/active'
+        elif subroute == "other":
+            url = f'{base_url}/other'
+        else:
+            url = base_url
 
         params = {'user': self.current_user.username}
         response = requests.get(url=url, params=params)
@@ -150,13 +157,13 @@ class KoreExtensionProblemsHandler(APIHandler):
 
 def setup_handlers(web_app):
     host_pattern = '.*$'
-
     base_url = web_app.settings['base_url']
 
     handlers = [
         # Prepend the base_url so that it works in a JupyterHub setting
         (url_path_join(base_url, 'kore-extension', 'title'), KoreExtensionTitleHandler),
         (url_path_join(base_url, 'kore-extension', 'grades'), KoreExtensionGradeHandler),
+        (url_path_join(base_url, 'kore-extension', 'courses/(active|other)?'), KoreExtensionCourseHandler),
         (url_path_join(base_url, 'kore-extension', 'courses'), KoreExtensionCourseHandler),
         (url_path_join(base_url, 'kore-extension', 'assignments'), KoreExtensionAssignmentHandler),
         (url_path_join(base_url, 'kore-extension', 'problems'), KoreExtensionProblemsHandler)
