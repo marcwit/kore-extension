@@ -81,13 +81,32 @@ async function handleCommandExecution(operation: string, context: string): Promi
 /**
  * Execute a request to the kore service.
  */
-async function executeOperation(operation: string, context: string, path?: any, fromPath?: any, toPath?: any): Promise<any> {
+async function executeImportOperation(operation: string, context: string, fromPath?: any, toPath?: any): Promise<any> {
     console.log(`Executing asynchronous function with operation: ${operation}; context: ${context}`);
 
     const requestOptions: { operation: string; body?: any } = { operation };
-    if (operation === 'POST') {
-        requestOptions.body = JSON.stringify({ 'fromPath': fromPath, 'toPath': toPath });
-    } else if (['PUT', 'PATCH', 'DELETE'].includes(operation)) {
+    requestOptions.body = JSON.stringify({ 'fromPath': fromPath, 'toPath': toPath });
+
+    try {
+        const response = await requestAPI<any>(context, requestOptions);
+        console.log(response.message);
+        Notification.success(`${response.message}`, { autoClose: 1000 });
+        return response;
+    } catch (reason) {
+        handleOperationError(reason, operation, context);
+    }
+}
+
+/**
+ * Execute a request to the kore service.
+ */
+async function executeOperation(operation: string, context: string, path?: any, name?: any): Promise<any> {
+    console.log(`Executing asynchronous function with operation: ${operation}; context: ${context}`);
+
+    const requestOptions: { operation: string; body?: any } = { operation };
+    if (operation === 'PUT') {
+        requestOptions.body = JSON.stringify({ 'path': path, 'name': name });
+    } else if (['PATCH', 'DELETE'].includes(operation)) {
         requestOptions.body = JSON.stringify({ 'path': path });
     }
 
@@ -159,7 +178,7 @@ async function handleImportOperation(context: string): Promise<void> {
             const toPath = requestToData.paths[toIndex];
 
             console.log(`Importing ${context} from ${fromPath} to ${toPath}`);
-            await executeOperation('POST', context, undefined, fromPath, toPath);
+            await executeImportOperation('POST', context, fromPath, toPath);
         }
     } catch (reason) {
         console.error(`Error while trying to copy ${context}.`);
@@ -193,10 +212,13 @@ async function handleCourseOperation(operation: string, context: string): Promis
                 });
 
                 if (confirmDialog.button.accept) {
-                    await executeOperation('DELETE', 'courses', path, undefined, undefined);
+                    await executeOperation('DELETE', 'courses', path, undefined);
                 }
+            } else if (operation == 'backup') {
+                const name = requestData.names[index];
+                await executeOperation('PUT', 'courses', path, name);
             } else {
-                await executeOperation(operation === 'backup' ? 'PUT' : 'PATCH', 'courses', path, undefined, undefined);
+                await executeOperation('PATCH', 'courses', path, undefined);
             }
         }
 
