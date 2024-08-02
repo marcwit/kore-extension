@@ -40,13 +40,54 @@ async function delay(ms: number): Promise<void> {
 
 
 /**
+ * Create and register a command for a specific operation and context.
+ */
+function createCommand(operation: string, context: string, commands: any): void {
+    commands.addCommand(`kore:${operation}-${context}`, {
+        label: `${capitalizeFirstLetter(operation)} ${context}`,
+        caption: `${capitalizeFirstLetter(operation)} current ${context}.`,
+        execute: async () => await handleCommandExecution(operation, context)
+    });
+}
+
+/**
+ * Handle the execution of a command based on its operation and context.
+ */
+async function handleCommandExecution(operation: string, context: string): Promise<void> {
+    // TODO delete this comment as it is just for me while programming
+    // we have to decide on operation (and context) what we gonna document
+    // as an import/copy operation of courses but also assignments and problems
+    // need ultimately two dropdown menus in the popup window to define FROM and TO
+    // therefore this operation `import` has to be handled separately.
+    // There has to be NO differentiation between courses and assignments and problems
+    // as all need the TO to be the running courses (/courses/active route) which
+    // has to be hardcoded in the called function
+    // The From is different for courses, assignments and problems but may be differentiated
+    // by the context.
+    // The other operations left are BACKUP, RESET and DELETE which are all only available
+    // in the course context. Use a separate function for this and a general function that
+    // catches all other (should be none) operations.
+
+
+    if (operation === 'import') {
+        await handleImportOperation(context);
+    } else if (['backup', 'reset', 'delete'].includes(operation) && context === 'course') {
+        await handleCourseOperation(operation, context);
+    } else {
+        await executeOperation(operation, context);
+    }
+}
+
+/**
  * Execute a request to the kore service.
  */
-async function executeOperation(operation: string, context: string, path?: any): Promise<any> {
+async function executeOperation(operation: string, context: string, path?: any, fromPath?: any, toPath?: any): Promise<any> {
     console.log(`Executing asynchronous function with operation: ${operation}; context: ${context}`);
 
     const requestOptions: { operation: string; body?: any } = { operation };
-    if (operation !== 'GET') {
+    if (operation === 'POST') {
+        requestOptions.body = JSON.stringify({ 'fromPath': fromPath, 'toPath': toPath });
+    } else if (['PUT', 'PATCH', 'DELETE'].includes(operation)) {
         requestOptions.body = JSON.stringify({ 'path': path });
     }
 
@@ -83,34 +124,11 @@ function handleOperationError(reason: any, operation: string, context: string): 
 }
 
 /**
- * Create and register a command for a specific operation and context.
- */
-function createCommand(operation: string, context: string, commands: any): void {
-    commands.addCommand(`kore:${operation}-${context}`, {
-        label: `${capitalizeFirstLetter(operation)} ${context}`,
-        caption: `${capitalizeFirstLetter(operation)} current ${context}.`,
-        execute: async () => await handleCommandExecution(operation, context)
-    });
-}
-
-/**
- * Handle the execution of a command based on its operation and context.
- */
-async function handleCommandExecution(operation: string, context: string): Promise<void> {
-    if (operation === 'import') {
-        await handleImportOperation(context);
-    } else if (['backup', 'reset', 'delete'].includes(operation) && context === 'course') {
-        await handleCourseOperation(operation, context);
-    } else {
-        await executeOperation(operation, context);
-    }
-}
-
-/**
  * Handle the import operation for a specific context.
  */
 async function handleImportOperation(context: string): Promise<void> {
     const routeMap: Record<string, string> = {
+        // TODO does this need to be /courses/has-notebooks?
         'course': 'courses',
         'assignment': 'assignments',
         'problem': 'problems'
@@ -118,18 +136,31 @@ async function handleImportOperation(context: string): Promise<void> {
     const route = routeMap[context];
 
     try {
-        const requestData = await executeOperation('GET', route);
-        const result = await InputDialog.getItem({
-            title: `Select ${context} to import:`,
-            items: requestData.names,
+        const requestFromData = await executeOperation('GET', route);
+        const fromInputDialog = await InputDialog.getItem({
+            title: `Select ${context} to import (FROM):`,
+            items: requestFromData.names,
+            okLabel: 'Proceed'
+        });
+
+        if (!fromInputDialog.button.accept) return;
+
+        const requestToData = await executeOperation('GET', 'courses/active');
+        const toInputDialog = await InputDialog.getItem({
+            title: `Select target course (TO):`,
+            items: requestToData.names,
             okLabel: 'Import'
         });
 
-        if (result.button.accept) {
-            console.log(`Importing ${context}: ${result.value}`);
-            const index = requestData.names.indexOf(result.value);
-            const path = requestData.paths[index];
-            await executeOperation('POST', context, path);
+        if (toInputDialog.button.accept) {
+            const fromIndex = requestFromData.names.indexOf(fromInputDialog.value);
+            const toIndex = requestToData.names.indexOf(toInputDialog.value);
+
+            const fromPath = requestFromData.paths[fromIndex];
+            const toPath = requestToData.paths[toIndex];
+
+            console.log(`Importing ${context} from ${fromPath} to ${toPath}`);
+            await executeOperation('POST', context, undefined, fromPath, toPath);
         }
     } catch (reason) {
         console.error(`Error while trying to copy ${context}.`);
@@ -153,7 +184,7 @@ async function handleCourseOperation(operation: string, context: string): Promis
                 console.log(`Deleting ${context}: ${result.value}`);
                 const index = requestData.names.indexOf(result.value);
                 const path = requestData.paths[index];
-                await executeOperation('DELETE', 'courses', path);
+                await executeOperation('DELETE', 'courses', path, undefined, undefined);
             }
         } catch (reason) {
             console.error(`Error while trying to delete ${context}.`);
