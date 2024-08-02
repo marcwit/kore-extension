@@ -94,7 +94,7 @@ async function executeOperation(operation: string, context: string, path?: any, 
     try {
         const response = await requestAPI<any>(context, requestOptions);
         console.log(response.message);
-        Notification.success(`${response.message}`, { autoClose: false });
+        Notification.success(`${response.message}`, { autoClose: 1000 });
         return response;
     } catch (reason) {
         handleOperationError(reason, operation, context);
@@ -128,7 +128,6 @@ function handleOperationError(reason: any, operation: string, context: string): 
  */
 async function handleImportOperation(context: string): Promise<void> {
     const routeMap: Record<string, string> = {
-        // TODO does this need to be /courses/has-notebooks?
         'course': 'courses',
         'assignment': 'assignments',
         'problem': 'problems'
@@ -171,35 +170,38 @@ async function handleImportOperation(context: string): Promise<void> {
  * Handle course-specific operations like backup, reset, and delete.
  */
 async function handleCourseOperation(operation: string, context: string): Promise<void> {
-    if (operation === 'delete') {
-        try {
-            const requestData = await executeOperation('GET', 'courses/active');
-            const result = await InputDialog.getItem({
-                title: `Select ${context} to delete:`,
-                items: requestData.names,
-                okLabel: 'Delete'
-            });
-
-            if (result.button.accept) {
-                console.log(`Deleting ${context}: ${result.value}`);
-                const index = requestData.names.indexOf(result.value);
-                const path = requestData.paths[index];
-                await executeOperation('DELETE', 'courses', path, undefined, undefined);
-            }
-        } catch (reason) {
-            console.error(`Error while trying to delete ${context}.`);
-        }
-    } else {
-        const dialogResult = await showDialog({
-            title: `${operation} ${context}`,
-            body: `Are you certain that you want to ${operation} the current ${context}?`,
-            buttons: [Dialog.cancelButton(), Dialog.okButton({ label: capitalizeFirstLetter(operation) })]
+    try {
+        const requestData = await executeOperation('GET', 'courses/active');
+        const inputDialog = await InputDialog.getItem({
+            title: `Select course to delete:`,
+            items: requestData.names,
+            okLabel: operation
         });
 
-        if (dialogResult.button.accept) {
-            console.log(`${operation}ing ${context}.`);
-            await executeOperation(operation === 'backup' ? 'PUT' : 'PATCH', 'courses');
+        if (inputDialog.button.accept) {
+            const index = requestData.names.indexOf(inputDialog.value);
+            const path = requestData.paths[index];
+
+            if (operation == 'delete') {
+                const confirmDialog = await showDialog({
+                    title: 'Confirmation Required',
+                    body: 'Please confirm the deletion? This process cannot be stopped!',
+                    buttons: [
+                        Dialog.cancelButton({ label: 'Abort' }),
+                        Dialog.okButton({ label: 'Delete' })
+                    ]
+                });
+
+                if (confirmDialog.button.accept) {
+                    await executeOperation('DELETE', 'courses', path, undefined, undefined);
+                }
+            } else {
+                await executeOperation(operation === 'backup' ? 'PUT' : 'PATCH', 'courses', path, undefined, undefined);
+            }
         }
+
+    } catch (reason) {
+        console.error(`Error while trying to ${operation}.`);
     }
 }
 
