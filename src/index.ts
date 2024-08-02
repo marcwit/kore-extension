@@ -154,9 +154,9 @@ async function handleImportOperation(context: string): Promise<void> {
 
         if (toInputDialog.button.accept) {
             const fromIndex = requestFromData.names.indexOf(fromInputDialog.value);
-            const toIndex = requestToData.names.indexOf(toInputDialog.value);
-
             const fromPath = requestFromData.paths[fromIndex];
+
+            const toIndex = requestToData.names.indexOf(toInputDialog.value);
             const toPath = requestToData.paths[toIndex];
 
             console.log(`Importing ${context} from ${fromPath} to ${toPath}`);
