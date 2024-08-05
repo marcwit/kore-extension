@@ -68,7 +68,6 @@ async function handleCommandExecution(operation: string, context: string): Promi
     // in the course context. Use a separate function for this and a general function that
     // catches all other (should be none) operations.
 
-
     if (operation === 'import') {
         await handleImportOperation(context);
     } else if (['backup', 'reset', 'delete'].includes(operation) && context === 'course') {
@@ -103,7 +102,13 @@ async function executeImportOperation(operation: string, context: string, fromPa
 async function executeOperation(operation: string, context: string, path?: any, name?: any): Promise<any> {
     console.log(`Executing asynchronous function with operation: ${operation}; context: ${context}`);
 
-    const requestOptions: { operation: string; body?: any } = { operation };
+    const requestOptions: RequestInit = {
+        method: operation,
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    };
+
     if (operation === 'PUT') {
         requestOptions.body = JSON.stringify({ 'path': path, 'name': name });
     } else if (['PATCH', 'DELETE'].includes(operation)) {
@@ -192,7 +197,7 @@ async function handleCourseOperation(operation: string, context: string): Promis
     try {
         const requestData = await executeOperation('GET', 'courses/active');
         const inputDialog = await InputDialog.getItem({
-            title: `Select course to delete:`,
+            title: `Select course to ${operation}:`,
             items: requestData.names,
             okLabel: operation
         });

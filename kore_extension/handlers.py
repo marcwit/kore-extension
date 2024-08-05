@@ -78,7 +78,11 @@ class KoreExtensionCourseHandler(APIHandler):
     def put(self):
         url = f'{kore_url}/courses'
 
-        payload = {'user': self.current_user.username}
+        payload = {
+            'user': self.current_user.username,
+            'path': self.get_json_body()['path'],
+            'name': self.get_json_body()['name']
+        }
         response = requests.put(url=url, json=payload)
 
         self.set_status(status_code=response.status_code)
