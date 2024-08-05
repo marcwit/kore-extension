@@ -199,7 +199,7 @@ async function handleCourseOperation(operation: string, context: string): Promis
         const inputDialog = await InputDialog.getItem({
             title: `Select course to ${operation}:`,
             items: requestData.names,
-            okLabel: operation
+            okLabel: capitalizeFirstLetter(operation)
         });
 
         if (inputDialog.button.accept) {

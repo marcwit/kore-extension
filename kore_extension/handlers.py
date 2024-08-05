@@ -94,7 +94,7 @@ class KoreExtensionCourseHandler(APIHandler):
 
         payload = {
             'user': self.current_user.username,
-            'path': self.get_json_body()['path'],
+            'path': self.get_json_body()['path']
         }
         response = requests.patch(url=url, json=payload)
 
@@ -105,7 +105,10 @@ class KoreExtensionCourseHandler(APIHandler):
     def delete(self):
         url = f'{kore_url}/courses'
 
-        payload = {'user': self.current_user.username}
+        payload = {
+            'user': self.current_user.username,
+            'path': self.get_json_body()['path']
+        }
         response = requests.delete(url=url, json=payload)
 
         self.set_status(status_code=response.status_code)
