@@ -92,7 +92,10 @@ class KoreExtensionCourseHandler(APIHandler):
     def patch(self):
         url = f'{kore_url}/courses'
 
-        payload = {'user': self.current_user.username}
+        payload = {
+            'user': self.current_user.username,
+            'path': self.get_json_body()['path'],
+        }
         response = requests.patch(url=url, json=payload)
 
         self.set_status(status_code=response.status_code)
