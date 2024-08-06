@@ -133,7 +133,8 @@ class KoreExtensionAssignmentHandler(APIHandler):
 
         payload = {
             'user': self.current_user.username,
-            'path': self.get_json_body()['path']
+            'fromPath': self.get_json_body()['fromPath'],
+            'toPath': self.get_json_body()['toPath']
         }
         response = requests.post(url=url, json=payload)
 
@@ -158,7 +159,8 @@ class KoreExtensionProblemsHandler(APIHandler):
 
         payload = {
             'user': self.current_user.username,
-            'path': self.get_json_body()['path']
+            'fromPath': self.get_json_body()['fromPath'],
+            'toPath': self.get_json_body()['toPath']
         }
         response = requests.post(url=url, json=payload)
 
