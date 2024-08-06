@@ -25,13 +25,6 @@ function capitalizeFirstLetter(str: string): string {
 }
 
 /**
- * Helper function to remove the last letter of a string.
- */
-function removeLastLetter(str: string): string {
-    return str ? str.slice(0, -1) : str;
-}
-
-/**
  * Helper function to add a delay.
  */
 async function delay(ms: number): Promise<void> {
@@ -54,20 +47,6 @@ function createCommand(operation: string, context: string, commands: any): void 
  * Handle the execution of a command based on its operation and context.
  */
 async function handleCommandExecution(operation: string, context: string): Promise<void> {
-    // TODO delete this comment as it is just for me while programming
-    // we have to decide on operation (and context) what we gonna document
-    // as an import/copy operation of courses but also assignments and problems
-    // need ultimately two dropdown menus in the popup window to define FROM and TO
-    // therefore this operation `import` has to be handled separately.
-    // There has to be NO differentiation between courses and assignments and problems
-    // as all need the TO to be the running courses (/courses/active route) which
-    // has to be hardcoded in the called function
-    // The From is different for courses, assignments and problems but may be differentiated
-    // by the context.
-    // The other operations left are BACKUP, RESET and DELETE which are all only available
-    // in the course context. Use a separate function for this and a general function that
-    // catches all other (should be none) operations.
-
     if (operation === 'import') {
         await handleImportOperation(context);
     } else if (['backup', 'reset', 'delete'].includes(operation) && context === 'course') {
@@ -83,7 +62,7 @@ async function handleCommandExecution(operation: string, context: string): Promi
 async function executeImportOperation(operation: string, context: string, fromPath?: any, toPath?: any): Promise<any> {
     console.log(`Executing asynchronous function with operation: ${operation}; context: ${context}`);
 
-    const requestOptions: { operation: string; body?: any } = { operation };
+    const requestOptions: RequestInit = { method: operation, headers: { 'Content-Type': 'application/json' } };
     requestOptions.body = JSON.stringify({ 'fromPath': fromPath, 'toPath': toPath });
 
     try {
@@ -102,13 +81,7 @@ async function executeImportOperation(operation: string, context: string, fromPa
 async function executeOperation(operation: string, context: string, path?: any, name?: any): Promise<any> {
     console.log(`Executing asynchronous function with operation: ${operation}; context: ${context}`);
 
-    const requestOptions: RequestInit = {
-        method: operation,
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    };
-
+    const requestOptions: RequestInit = { method: operation, headers: { 'Content-Type': 'application/json' } };
     if (operation === 'PUT') {
         requestOptions.body = JSON.stringify({ 'path': path, 'name': name });
     } else if (['PATCH', 'DELETE'].includes(operation)) {
@@ -141,7 +114,7 @@ function handleOperationError(reason: any, operation: string, context: string): 
             'DELETE': 'deleting'
         };
         const task = operationMap[operation];
-        const errorMessage = `${reason.message} while ${removeLastLetter(context)} ${task}. Contact administrator or see logs for more details.`;
+        const errorMessage = `${reason.message} while ${context} ${task}. Contact administrator or see logs for more details.`;
         console.error(errorMessage);
         Notification.error(errorMessage, { autoClose: false });
     }
@@ -183,7 +156,7 @@ async function handleImportOperation(context: string): Promise<void> {
             const toPath = requestToData.paths[toIndex];
 
             console.log(`Importing ${context} from ${fromPath} to ${toPath}`);
-            await executeImportOperation('POST', context, fromPath, toPath);
+            await executeImportOperation('POST', route, fromPath, toPath);
         }
     } catch (reason) {
         console.error(`Error while trying to copy ${context}.`);
