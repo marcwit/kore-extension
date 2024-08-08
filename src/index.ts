@@ -12,10 +12,6 @@ import {
 
 import { requestAPI } from './handler';
 import { ReadonlyJSONValue } from '@lumino/coreutils';
-import { Widget } from '@lumino/widgets';
-
-// CSS class for styling.
-const TOP_AREA_CSS_CLASS = 'jp-Cell';
 
 /**
  * Helper function for capitalizing first letter of a string.
@@ -237,14 +233,6 @@ const plugin: JupyterFrontEndPlugin<void> = {
         console.log('JupyterLab extension kore-extension is activated!');
 
         const { commands } = app;
-
-        // Create course title widget and add it to the top area.
-        const courseTitle = document.createElement('div');
-        courseTitle.textContent = await executeOperation('GET', 'title').then(result => result.title);
-        const courseTitleWidget = new Widget({ node: courseTitle });
-        courseTitleWidget.id = "kore-extension-course-title";
-        courseTitleWidget.addClass(TOP_AREA_CSS_CLASS);
-        app.shell.add(courseTitleWidget, 'top', { rank: 1000 });
 
         // Register commands.
         commands.addCommand('kore:send-grades', {

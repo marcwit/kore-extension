@@ -16,21 +16,6 @@ hub_prefix = os.environ.get('JUPYTERHUB_BASE_URL', '/')
 kore_url = f'http://127.0.0.1:10001/{hub_prefix.replace("/", "")}/services/kore'
 
 
-class KoreExtensionTitleHandler(APIHandler):
-    # The following decorator should be present on all verb methods (head, get, post,
-    # patch, put, delete, options) to ensure only authorized user can request the
-    # Jupyter server
-    @tornado.web.authenticated
-    def get(self):
-        url = f'{kore_url}/title'
-
-        params = {'user': self.current_user.username}
-        response = requests.get(url=url, params=params)
-
-        self.set_status(status_code=response.status_code)
-        self.finish(response.json())
-
-
 class KoreExtensionGradeHandler(APIHandler):
     @tornado.web.authenticated
     def post(self):
@@ -174,7 +159,6 @@ def setup_handlers(web_app):
 
     handlers = [
         # Prepend the base_url so that it works in a JupyterHub setting
-        (url_path_join(base_url, 'kore-extension', 'title'), KoreExtensionTitleHandler),
         (url_path_join(base_url, 'kore-extension', 'grades'), KoreExtensionGradeHandler),
         (url_path_join(base_url, 'kore-extension', 'courses/(active|other)?'), KoreExtensionCourseHandler),
         (url_path_join(base_url, 'kore-extension', 'courses'), KoreExtensionCourseHandler),
