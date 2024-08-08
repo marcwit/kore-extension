@@ -27,7 +27,6 @@ async function delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-
 /**
  * Create and register a command for a specific operation and context.
  */
@@ -98,7 +97,7 @@ async function executeOperation(operation: string, context: string, path?: any, 
  * Handle errors for operations.
  */
 function handleOperationError(reason: any, operation: string, context: string): void {
-    if (reason.message === 'NoContentFound') {
+    if (reason.message === 'NoContentError') {
         console.log(`No ${context} found that could be copied. Contact administrator or see logs for more details.`);
         Notification.info(`No ${context} found that could be copied. Contact administrator or see logs for more details.`, { autoClose: false });
     } else {
