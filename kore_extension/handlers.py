@@ -153,6 +153,18 @@ class KoreExtensionProblemsHandler(APIHandler):
         self.finish(response.json())
 
 
+class KoreExtensionConfigHandler(APIHandler):
+    @tornado.web.authenticated
+    def get(self):
+        url = f'{kore_url}/config'
+
+        params = {'user': self.current_user.username}
+        response = requests.get(url=url, params=params)
+
+        self.set_status(status_code=response.status_code)
+        self.finish(response.json())
+
+
 def setup_handlers(web_app):
     host_pattern = '.*$'
     base_url = web_app.settings['base_url']
@@ -163,7 +175,8 @@ def setup_handlers(web_app):
         (url_path_join(base_url, 'kore-extension', 'courses/(active|other)?'), KoreExtensionCourseHandler),
         (url_path_join(base_url, 'kore-extension', 'courses'), KoreExtensionCourseHandler),
         (url_path_join(base_url, 'kore-extension', 'assignments'), KoreExtensionAssignmentHandler),
-        (url_path_join(base_url, 'kore-extension', 'problems'), KoreExtensionProblemsHandler)
+        (url_path_join(base_url, 'kore-extension', 'problems'), KoreExtensionProblemsHandler),
+        (url_path_join(base_url, 'kore-extension', 'config'), KoreExtensionConfigHandler)
     ]
 
     web_app.add_handlers(host_pattern, handlers)
