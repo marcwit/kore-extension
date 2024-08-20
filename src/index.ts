@@ -13,40 +13,49 @@ import {
 import { requestAPI } from './handler';
 import { Widget } from '@lumino/widgets';
 
+/**
+ * A widget to display a multi-line message with a bold course name.
+ */
 class MultilineBodyWidget extends Widget {
     constructor(preText: string, courseName: string, postText: string) {
         super();
 
-        const preTextDiv = document.createElement('div');
-        preTextDiv.style.whiteSpace = 'pre-line';
-        preTextDiv.textContent = preText;
+        // Create and style the pre-text, course name, and post-text elements.
+        const preTextDiv = this.createTextDiv(preText);
+        const courseNameDiv = this.createTextDiv(courseName, true);
+        const postTextDiv = this.createTextDiv(postText);
 
-        const courseNameDiv = document.createElement('div');
-        courseNameDiv.style.whiteSpace = 'pre-line';
-        courseNameDiv.style.fontWeight = 'bold';
-        courseNameDiv.style.fontSize = '20px';
-        courseNameDiv.textContent = courseName;
-
-        const postTextDiv = document.createElement('div');
-        postTextDiv.style.whiteSpace = 'pre-line';
-        postTextDiv.textContent = postText;
-
+        // Append the elements to the widget's node.
         this.node.appendChild(preTextDiv);
         this.node.appendChild(courseNameDiv);
         this.node.appendChild(postTextDiv);
+    }
+
+    /**
+     * Helper function to create a styled div element for text.
+     */
+    private createTextDiv(text: string, isBold: boolean = false): HTMLDivElement {
+        const div = document.createElement('div');
+        div.style.whiteSpace = 'pre-line';
+        if (isBold) {
+            div.style.fontWeight = 'bold';
+            div.style.fontSize = '20px';
+        }
+        div.textContent = text;
+        return div;
     }
 }
 
 
 /**
- * Helper function for capitalizing first letter of a string.
+ * Capitalizing the first letter of a given string.
  */
 function capitalizeFirstLetter(str: string): string {
     return str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
 }
 
 /**
- * Create and register a command for a specific operation and context.
+ * Register a command for a specific operation and context.
  */
 function createCommand(operation: string, context: string, commands: any): void {
     commands.addCommand(`kore:${operation}-${context}`, {
@@ -60,6 +69,8 @@ function createCommand(operation: string, context: string, commands: any): void 
  * Handle the execution of a command based on its operation and context.
  */
 async function handleCommandExecution(operation: string, context: string): Promise<void> {
+    console.log(`Executing asynchronous function with operation: ${operation}; context: ${context}`);
+
     if (operation === 'import') {
         await handleImportOperation(context);
     } else if (['backup', 'reset', 'delete'].includes(operation) && context === 'course') {
@@ -73,8 +84,6 @@ async function handleCommandExecution(operation: string, context: string): Promi
  * Execute a request to the kore service.
  */
 async function executeImportOperation(operation: string, context: string, fromPath?: any, toPath?: any): Promise<any> {
-    console.log(`Executing asynchronous function with operation: ${operation}; context: ${context}`);
-
     const requestOptions: RequestInit = { method: operation, headers: { 'Content-Type': 'application/json' } };
     requestOptions.body = JSON.stringify({ 'fromPath': fromPath, 'toPath': toPath });
 
@@ -92,8 +101,6 @@ async function executeImportOperation(operation: string, context: string, fromPa
  * Execute a request to the kore service.
  */
 async function executeOperation(operation: string, context: string, path?: any, name?: any): Promise<any> {
-    console.log(`Executing asynchronous function with operation: ${operation}; context: ${context}`);
-
     const requestOptions: RequestInit = { method: operation, headers: { 'Content-Type': 'application/json' } };
     if (operation === 'PUT') {
         requestOptions.body = JSON.stringify({ 'path': path, 'name': name });
@@ -147,28 +154,28 @@ async function handleImportOperation(context: string): Promise<void> {
     const route = routeMap[context];
 
     try {
-        const requestFromData = await executeOperation('GET', route);
+        const fromData = await executeOperation('GET', route);
         const fromInputDialog = await InputDialog.getItem({
-            title: `Select ${context} to import (FROM):`,
-            items: requestFromData.names,
+            title: `Select ${context} to import from:`,
+            items: fromData.names,
             okLabel: 'Proceed'
         });
 
         if (!fromInputDialog.button.accept) return;
 
-        const requestToData = await executeOperation('GET', 'courses/active');
+        const toData = await executeOperation('GET', 'courses/active');
         const toInputDialog = await InputDialog.getItem({
-            title: `Select target course (TO):`,
-            items: requestToData.names,
+            title: 'Select target course to import into:',
+            items: toData.names,
             okLabel: 'Import'
         });
 
         if (toInputDialog.button.accept) {
-            const fromIndex = requestFromData.names.indexOf(fromInputDialog.value);
-            const fromPath = requestFromData.paths[fromIndex];
+            const fromIndex = fromData.names.indexOf(fromInputDialog.value);
+            const fromPath = fromData.paths[fromIndex];
 
-            const toIndex = requestToData.names.indexOf(toInputDialog.value);
-            const toPath = requestToData.paths[toIndex];
+            const toIndex = toData.names.indexOf(toInputDialog.value);
+            const toPath = toData.paths[toIndex];
 
             console.log(`Importing ${context} from ${fromPath} to ${toPath}`);
             await executeImportOperation('POST', route, fromPath, toPath);
@@ -183,16 +190,16 @@ async function handleImportOperation(context: string): Promise<void> {
  */
 async function handleCourseOperation(operation: string, context: string): Promise<void> {
     try {
-        const requestData = await executeOperation('GET', 'courses/active');
+        const activeCoursesData = await executeOperation('GET', 'courses/active');
         const inputDialog = await InputDialog.getItem({
             title: `Select course to ${operation}:`,
-            items: requestData.names,
+            items: activeCoursesData.names,
             okLabel: capitalizeFirstLetter(operation)
         });
 
         if (inputDialog.button.accept) {
-            const index = requestData.names.indexOf(inputDialog.value);
-            const path = requestData.paths[index];
+            const index = activeCoursesData.names.indexOf(inputDialog.value);
+            const path = activeCoursesData.paths[index];
 
             if (operation == 'delete') {
                 const confirmDialog = await showDialog({
@@ -208,7 +215,7 @@ async function handleCourseOperation(operation: string, context: string): Promis
                     await executeOperation('DELETE', 'courses', path, undefined);
                 }
             } else if (operation == 'backup') {
-                const name = requestData.names[index];
+                const name = activeCoursesData.names[index];
                 await executeOperation('PUT', 'courses', path, name);
             } else {
                 await executeOperation('PATCH', 'courses', path, undefined);
@@ -238,10 +245,6 @@ const plugin: JupyterFrontEndPlugin<void> = {
             execute: async () => {
                 const config = await requestAPI<any>('config', { method: 'GET' });
                 var gradingScope = (config.grading_scope === 'all' || config.grading_scope === 'current') ? config.grading_scope : 'current';
-
-                // change case for current and all
-                // for 'current' only the course the user came in from shall be graded
-                // if it is 'all' check where the current user is instructor and give dropdown with courses
 
                 if (gradingScope === 'current') {
                     const currentCourseData = await executeOperation('GET', 'courses/current');
