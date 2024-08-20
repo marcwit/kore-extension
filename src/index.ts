@@ -11,20 +11,38 @@ import {
 } from '@jupyterlab/apputils';
 
 import { requestAPI } from './handler';
-import { ReadonlyJSONValue } from '@lumino/coreutils';
+import { Widget } from '@lumino/widgets';
+
+class MultilineBodyWidget extends Widget {
+    constructor(preText: string, courseName: string, postText: string) {
+        super();
+
+        const preTextDiv = document.createElement('div');
+        preTextDiv.style.whiteSpace = 'pre-line';
+        preTextDiv.textContent = preText;
+
+        const courseNameDiv = document.createElement('div');
+        courseNameDiv.style.whiteSpace = 'pre-line';
+        courseNameDiv.style.fontWeight = 'bold';
+        courseNameDiv.style.fontSize = '20px';
+        courseNameDiv.textContent = courseName;
+
+        const postTextDiv = document.createElement('div');
+        postTextDiv.style.whiteSpace = 'pre-line';
+        postTextDiv.textContent = postText;
+
+        this.node.appendChild(preTextDiv);
+        this.node.appendChild(courseNameDiv);
+        this.node.appendChild(postTextDiv);
+    }
+}
+
 
 /**
  * Helper function for capitalizing first letter of a string.
  */
 function capitalizeFirstLetter(str: string): string {
     return str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
-}
-
-/**
- * Helper function to add a delay.
- */
-async function delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 /**
@@ -79,14 +97,16 @@ async function executeOperation(operation: string, context: string, path?: any, 
     const requestOptions: RequestInit = { method: operation, headers: { 'Content-Type': 'application/json' } };
     if (operation === 'PUT') {
         requestOptions.body = JSON.stringify({ 'path': path, 'name': name });
-    } else if (['PATCH', 'DELETE'].includes(operation)) {
+    } else if (['POST', 'PATCH', 'DELETE'].includes(operation)) {
         requestOptions.body = JSON.stringify({ 'path': path });
+    } else {
+        console.log('TODO');
     }
 
     try {
         const response = await requestAPI<any>(context, requestOptions);
         console.log(response.message);
-        Notification.success(`${response.message}`, { autoClose: 1000 });
+        if (context !== 'grades') { Notification.success(`${response.message}`, { autoClose: 1000 }); }
         return response;
     } catch (reason) {
         handleOperationError(reason, operation, context);
@@ -194,30 +214,8 @@ async function handleCourseOperation(operation: string, context: string): Promis
                 await executeOperation('PATCH', 'courses', path, undefined);
             }
         }
-
     } catch (reason) {
         console.error(`Error while trying to ${operation}.`);
-    }
-}
-
-/**
- * Send grades to LMS with a confirmation dialog and notification handling.
- */
-async function sendGrades(): Promise<ReadonlyJSONValue> {
-    console.log('Executing asynchronous function sendGrades()');
-    try {
-        const response = await requestAPI<any>('grades', { method: 'POST' });
-        await delay(500);
-        return response;
-    } catch (reason) {
-        await delay(500);
-        if (reason instanceof Error) {
-            console.error(`${reason.message} while sending grades to LMS. Contact administrator or see logs for more details.`);
-            return Promise.reject(reason.message);
-        } else {
-            console.error(`An unknown error occurred while sending grades to LMS. Contact administrator or see logs for more details.`);
-            return Promise.reject('An unknown error occurred.');
-        }
     }
 }
 
@@ -235,24 +233,67 @@ const plugin: JupyterFrontEndPlugin<void> = {
 
         // Register commands.
         commands.addCommand('kore:send-grades', {
-            label: 'Send all grades to LMS',
-            caption: 'Used to transfer all grades of current course to LMS.',
+            label: 'Send grades to LMS',
+            caption: 'Used to transfer grades of a course to LMS.',
             execute: async () => {
-                const result = await showDialog({
-                    title: 'Confirm Send Grades',
-                    body: 'Are you sure you want to send all grades to LMS?',
-                    buttons: [Dialog.cancelButton(), Dialog.okButton({ label: 'Send' })]
-                });
+                const config = await requestAPI<any>('config', { method: 'GET' });
+                var gradingScope = (config.grading_scope === 'all' || config.grading_scope === 'current') ? config.grading_scope : 'current';
 
-                if (result.button.accept) {
-                    Notification.promise(
-                        sendGrades(), {
-                        pending: { message: 'Sending grades to LMS...', options: { autoClose: false } },
-                        success: { message: () => 'Sending grades successful.' },
-                        error: { message: (reason: any) => `Sending grades failed with ${reason}` }
+                // change case for current and all
+                // for 'current' only the course the user came in from shall be graded
+                // if it is 'all' check where the current user is instructor and give dropdown with courses
+
+                if (gradingScope === 'current') {
+                    const currentCourseData = await executeOperation('GET', 'courses/current');
+                    const currentCourseName = currentCourseData.names[0]
+                    const currentCoursePath = currentCourseData.paths[0]
+
+                    const result = await showDialog({
+                        title: 'Confirm Send Grades',
+                        body: new MultilineBodyWidget(
+                            `You are about to send grades to the LMS for the course:\n\n`,
+                            `${currentCourseName}\n\n`,
+                            `This behaviour is specified in the global configuration.
+                            If you intend to send grades for a different course, please log in to JupyterHub from the associated course's LMS page. \n
+                            Do you wish to proceed?`
+                        ),
+                        buttons: [Dialog.cancelButton(), Dialog.okButton({ label: 'Proceed' })]
                     });
+
+                    console.log(result);
+                    if (result.button.accept) {
+                        Notification.promise(
+                            executeOperation('POST', 'grades', currentCoursePath), {
+                            pending: { message: 'Sending grades to LMS...', options: { autoClose: false } },
+                            success: { message: () => 'Sending grades successful.' },
+                            error: { message: (reason: any) => `Sending grades failed with ${reason}` }
+                        });
+                    } else {
+                        console.log('User cancelled the operation.');
+                    }
+                } else if (gradingScope === 'all') {
+                    const requestCoursesData = await executeOperation('GET', 'courses/active');
+                    const coursesDialog = await InputDialog.getItem({
+                        title: `Select course that shall be graded:`,
+                        items: requestCoursesData.names,
+                        okLabel: 'Grade'
+                    });
+
+                    if (coursesDialog.button.accept) {
+                        const index = requestCoursesData.names.indexOf(coursesDialog.value);
+                        const path = requestCoursesData.paths[index];
+
+                        Notification.promise(
+                            executeOperation('POST', 'grades', path), {
+                            pending: { message: 'Sending grades to LMS...', options: { autoClose: false } },
+                            success: { message: () => 'Sending grades successful.' },
+                            error: { message: (reason: any) => `Sending grades failed with ${reason}` }
+                        });
+                    } else {
+                        console.log('User cancelled the operation.');
+                    }
                 } else {
-                    console.log('User cancelled the operation.');
+                    Notification.info(`Something unexpected occurred while trying to send grades. Contact administrator or see logs for more details.`, { autoClose: false });
                 }
             }
         });

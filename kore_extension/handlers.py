@@ -21,7 +21,10 @@ class KoreExtensionGradeHandler(APIHandler):
     def post(self):
         url = f'{kore_url}/grades'
 
-        payload = {'user': self.current_user.username}
+        payload = {
+            'user': self.current_user.username,
+            'path': self.get_json_body()['path']
+        }
         response = requests.post(url=url, json=payload)
 
         self.set_status(status_code=response.status_code)
@@ -35,8 +38,8 @@ class KoreExtensionCourseHandler(APIHandler):
 
         if subroute == "active":
             url = f'{base_url}/active'
-        elif subroute == "other":
-            url = f'{base_url}/other'
+        elif subroute == "current":
+            url = f'{base_url}/current'
         else:
             url = base_url
 
@@ -172,7 +175,7 @@ def setup_handlers(web_app):
     handlers = [
         # Prepend the base_url so that it works in a JupyterHub setting
         (url_path_join(base_url, 'kore-extension', 'grades'), KoreExtensionGradeHandler),
-        (url_path_join(base_url, 'kore-extension', 'courses/(active|other)?'), KoreExtensionCourseHandler),
+        (url_path_join(base_url, 'kore-extension', 'courses/(active|current)?'), KoreExtensionCourseHandler),
         (url_path_join(base_url, 'kore-extension', 'courses'), KoreExtensionCourseHandler),
         (url_path_join(base_url, 'kore-extension', 'assignments'), KoreExtensionAssignmentHandler),
         (url_path_join(base_url, 'kore-extension', 'problems'), KoreExtensionProblemsHandler),
