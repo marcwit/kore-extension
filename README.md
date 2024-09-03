@@ -31,10 +31,34 @@ In `kore_extension/handlers.py` the routes are defined.
 In `schema/plugin.json` the layout of the extension is defined.
 In `src/index.ts` the behaviour is defined.
 
-For testing generate package with `jlpm install`, `jlpm run build` and `python -m build`.
+For testing generate package with `jlpm install` (necessary after package changes), `jlpm run build` and `python -m build`.
 Copy package to server and install it in the podman container under the `jhub` environment.
 
 ```terminal
 source /opt/conda/etc/profile.d/conda.sh; conda activate jhub
 pip install kore_extension-0.1.0-py3-none-any.whl
+```
+
+For updating packages list outdated packages with:
+
+```terminal
+npm outdated
+```
+
+Afterward install packages with:
+
+```terminal
+npm install <package-name>@latest
+```
+
+You may also check for vulnerabilities with:
+
+```terminal
+npm audit
+```
+
+You may fix vulnerabilities with:
+
+```terminal
+npm audit fix
 ```
